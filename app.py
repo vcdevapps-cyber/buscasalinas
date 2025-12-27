@@ -13,6 +13,10 @@ except ImportError:
 st.set_page_config(page_title="Obs. Salinas", layout="wide")
 SENHA_ACESSO = "salinas1969" 
 
+# Inicializar a "memória" do app para os resultados da busca
+if 'resultados_web' not in st.session_state:
+    st.session_state.resultados_web = []
+
 st.title("🏛️ Observatório Salinas da Margarida")
 st.caption("Pesquisa: Sérgio | História e Economia Local")
 
@@ -25,26 +29,33 @@ if senha == SENHA_ACESSO:
 
     with aba1:
         st.subheader("Instagram (Supermercados)")
-        st.info("Esta função é experimental na nuvem devido aos bloqueios da Meta.")
+        st.info("Esta função é experimental. O Instagram costuma bloquear servidores de nuvem.")
         if st.button("Consultar Redes Sociais"):
-            st.warning("O Instagram costuma bloquear servidores. Use a Aba Radar Web para notícias.")
+            st.warning("Verifique o log se os dados não aparecerem.")
 
     with aba2:
         st.subheader("Busca Global (Google/DuckDuckGo)")
         if not ferramentas_prontas:
-            st.error("⚠️ O servidor ainda não instalou as ferramentas de busca. Verifique o arquivo requirements.txt no GitHub.")
+            st.error("⚠️ Ferramentas de busca não instaladas no servidor.")
         else:
             termo = st.text_input("O que pesquisar?", value="Salinas da Margarida")
+            
+            # Botão para disparar a busca
             if st.button("🔍 Iniciar Varredura"):
                 with st.spinner("Buscando fontes..."):
                     try:
                         with DDGS() as ddgs:
-                            results = [r for r in ddgs.text(termo, max_results=5)]
-                            for r in results:
-                                st.markdown(f"**[{r['title']}]({r['href']})**")
-                                st.write(r['body'])
-                                st.divider()
+                            # Guardamos os resultados na "memória" (session_state)
+                            st.session_state.resultados_web = [r for r in ddgs.text(termo, max_results=7)]
                     except Exception as e:
                         st.error(f"Erro na varredura: {e}")
+
+            # EXIBIÇÃO DOS RESULTADOS (Fora do botão, para não sumirem)
+            if st.session_state.resultados_web:
+                st.write(f"--- Resultados para: {termo} ---")
+                for r in st.session_state.resultados_web:
+                    st.markdown(f"### [{r['title']}]({r['href']})")
+                    st.write(r['body'])
+                    st.divider()
 else:
     st.info("Digite a senha para acessar seu laboratório de pesquisa.")
